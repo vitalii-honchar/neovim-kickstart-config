@@ -183,6 +183,7 @@ return {
           ['<'] = 'prev_source',
           ['>'] = 'next_source',
           ['i'] = 'show_file_details',
+          ['\\'] = 'close_window',
         },
       },
       nesting_rules = {},
