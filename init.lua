@@ -31,6 +31,7 @@ require('lazy').setup {
   require 'plugins.comment',
   require 'plugins.go-debug',
   require 'plugins.gopher',
+  require 'plugins.tmux',
   --  require 'plugins.go-nvim',
 }
 
