@@ -1,56 +1,90 @@
 return {
-  'nvimtools/none-ls.nvim',
-  dependencies = {
-    'nvimtools/none-ls-extras.nvim',
-    'jayp0521/mason-null-ls.nvim', -- ensure dependencies are installed
+  {
+    'stevearc/conform.nvim',
+    event = { 'BufReadPre', 'BufNewFile' },
+    config = function()
+      local conform = require 'conform'
+
+      conform.setup {
+        formatters_by_ft = {
+          javascript = { 'prettier' },
+          typescript = { 'prettier' },
+          javascriptreact = { 'prettier' },
+          typescriptreact = { 'prettier' },
+          svelte = { 'prettier' },
+          css = { 'prettier' },
+          html = { 'prettier' },
+          json = { 'prettier' },
+          yaml = { 'prettier' },
+          markdown = { 'prettier' },
+          lua = { 'stylua' },
+          python = { 'ruff_format', 'ruff_organize_imports' },
+          go = { 'gofmt', 'goimports' },
+          sh = { 'shfmt' },
+          terraform = { 'terraform_fmt' },
+        },
+        format_on_save = {
+          lsp_fallback = true,
+          async = false,
+          timeout_ms = 1000,
+        },
+      }
+
+      vim.keymap.set({ 'n', 'v' }, '<leader>mp', function()
+        conform.format {
+          lsp_fallback = true,
+          async = false,
+          timeout_ms = 1000,
+        }
+      end, { desc = 'Format file or range (in visual mode)' })
+    end,
   },
-  config = function()
-    local null_ls = require 'null-ls'
-    local formatting = null_ls.builtins.formatting -- to setup formatters
-    local diagnostics = null_ls.builtins.diagnostics -- to setup linters
+  {
+    'mfussenegger/nvim-lint',
+    event = { 'BufReadPre', 'BufNewFile' },
+    config = function()
+      local lint = require 'lint'
 
-    -- Formatters & linters for mason to install
-    require('mason-null-ls').setup {
-      ensure_installed = {
-        'prettier', -- ts/js formatter
-        'stylua', -- lua formatter
-        'eslint_d', -- ts/js linter
-        'shfmt', -- Shell formatter
-        'checkmake', -- linter for Makefiles
-        'ruff', -- Python linter and formatter
-      },
-      automatic_installation = true,
-    }
+      lint.linters_by_ft = {
+        javascript = { 'eslint_d' },
+        typescript = { 'eslint_d' },
+        javascriptreact = { 'eslint_d' },
+        typescriptreact = { 'eslint_d' },
+        svelte = { 'eslint_d' },
+        python = { 'ruff' },
+        make = { 'checkmake' },
+      }
 
-    local sources = {
-      diagnostics.checkmake,
-      formatting.prettier.with { filetypes = { 'html', 'json', 'yaml', 'markdown' } },
-      formatting.stylua,
-      formatting.shfmt.with { args = { '-i', '4' } },
-      formatting.terraform_fmt,
-      formatting.gofmt,
-      formatting.goimports,
-      require('none-ls.formatting.ruff').with { extra_args = { '--extend-select', 'I' } },
-      require 'none-ls.formatting.ruff_format',
-    }
+      local lint_augroup = vim.api.nvim_create_augroup('lint', { clear = true })
 
-    local augroup = vim.api.nvim_create_augroup('LspFormatting', {})
-    null_ls.setup {
-      -- debug = true, -- Enable debug mode. Inspect logs with :NullLsLog.
-      sources = sources,
-      -- you can reuse a shared lspconfig on_attach callback here
-      on_attach = function(client, bufnr)
-        if client.supports_method 'textDocument/formatting' then
-          vim.api.nvim_clear_autocmds { group = augroup, buffer = bufnr }
-          vim.api.nvim_create_autocmd('BufWritePre', {
-            group = augroup,
-            buffer = bufnr,
-            callback = function()
-              vim.lsp.buf.format { async = false }
-            end,
-          })
-        end
-      end,
-    }
-  end,
+      vim.api.nvim_create_autocmd({ 'BufEnter', 'BufWritePost', 'InsertLeave' }, {
+        group = lint_augroup,
+        callback = function()
+          lint.try_lint()
+        end,
+      })
+
+      vim.keymap.set('n', '<leader>l', function()
+        lint.try_lint()
+      end, { desc = 'Trigger linting for current file' })
+    end,
+  },
+  {
+    'WhoIsSethDaniel/mason-tool-installer.nvim',
+    config = function()
+      require('mason-tool-installer').setup {
+        ensure_installed = {
+          'prettier',
+          'stylua',
+          'eslint_d',
+          'shfmt',
+          'checkmake',
+          'ruff',
+          'gofmt',
+          'goimports',
+          'terraform-fmt',
+        },
+      }
+    end,
+  },
 }

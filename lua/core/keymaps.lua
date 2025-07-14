@@ -73,3 +73,16 @@ vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous dia
 vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next diagnostic message' })
 vim.keymap.set('n', '<leader>d', vim.diagnostic.open_float, { desc = 'Open floating diagnostic message' })
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostics list' })
+
+vim.api.nvim_create_user_command('RunCurrentFile', function()
+  local filetype = vim.bo.filetype
+  if filetype == 'go' then
+    vim.cmd '!go run %'
+  elseif filetype == 'python' then
+    vim.cmd '!python %'
+  else
+    print 'Unsupported file type for running.'
+  end
+end, {})
+
+vim.keymap.set('n', '<leader><F5>', ':RunCurrentFile<CR>', { noremap = true, silent = true })
